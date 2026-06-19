@@ -1,9 +1,16 @@
 from app import app
+from flask import render_template
 
 
 @app.route('/')
-def hello():
-    return "Página inicial"
+def home():
+    usuario = {
+        "nome": "Leo",
+        "produtos": ["Banana", "Abacaxi", "Melancia"]
+    }
+    esta_logado = True
+    return render_template("index.html", pessoa = usuario,
+                           usuario_logado = esta_logado)
 
 
 @app.route('/sobre')
