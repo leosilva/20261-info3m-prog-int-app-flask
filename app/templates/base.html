@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <title>{% block titulo %}{% endblock %}</title>
+    </head>
+    <body>
+        {% include "header.html" %}
+        {% block conteudo %}
+        {% endblock %}
+        {% include "footer.html" %}
+    </body>
+</html>

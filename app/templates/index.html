@@ -1,19 +1,16 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <title>Minha primeira página</title>
-    </head>
-    <body>
-        {% if usuario_logado %}
-            <h1>Bem vindo(a), {{ pessoa.nome }}</h1>
-            <ul>
-                {% for p in pessoa.produtos %}
-                    <li>{{ p }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <h1>Faça o login para continuar.</h1>
-        {% endif %}
-    </body>
-</html>
+{% extends "base.html" %}
+
+{% block titulo %}Página Inicial{% endblock %}
+
+{% block conteudo %}
+    {% if usuario_logado %}
+        <h1>Bem vindo(a), {{ pessoa.nome }}</h1>
+        <ul>
+            {% for p in pessoa.produtos %}
+                <li>{{ p }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <h1>Faça o login para continuar.</h1>
+    {% endif %}
+{% endblock %}
