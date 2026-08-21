@@ -1,7 +1,8 @@
 from app import app
-from flask import render_template
+from flask import render_template, redirect, flash
 
 from app.forms.login_form import LoginForm
+from app.services.AuthenticationService import AuthenticationService
 
 
 @app.route('/')
@@ -27,9 +28,12 @@ def endereco():
 def login():
     formulario = LoginForm()
     if formulario.validate_on_submit():
-        print(formulario.username.data)
-        print(formulario.password.data)
-        return render_template("index.html")
+        if AuthenticationService.login(formulario):
+            flash("Login efetuado com sucesso!")
+            return redirect("/")
+        else:
+            flash("Erro nas credenciais.")
+            return redirect("/login")
     return render_template('login.html', 
                            title='Login', 
                            form=formulario)
