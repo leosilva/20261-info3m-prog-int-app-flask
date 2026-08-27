@@ -6,7 +6,10 @@
         {{ form.hidden_tag() }}
         <p>
             {{ form.nome_completo.label }}<br/>
-            {{ form.nome_completo(size=50)}}
+            {{ form.nome_completo(size=50)}}<br/>
+            {% for error in form.nome_completo.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
         </p>
         <p>
             {{ form.email.label }}<br/>
