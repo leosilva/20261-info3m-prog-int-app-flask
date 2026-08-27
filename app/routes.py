@@ -2,7 +2,9 @@ from app import app
 from flask import render_template, redirect, flash
 
 from app.forms.login_form import LoginForm
+from app.forms.usuario_form import UsuarioForm
 from app.services.AuthenticationService import AuthenticationService
+from app.services.UsuarioService import UsuarioService
 
 
 @app.route('/')
@@ -37,3 +39,18 @@ def login():
     return render_template('login.html', 
                            title='Login', 
                            form=formulario)
+    
+
+@app.route('/cadastrar', methods=['GET', 'POST'])
+def cadastrar_usuario():
+    formulario = UsuarioForm()
+    if formulario.validate_on_submit():
+        if UsuarioService.salvar(formulario):
+            flash("Usuario cadastrado com sucesso!")
+            return redirect("/")
+        else:
+            flash("Usuário não cadastrado.")
+            return redirect("/cadastrar")
+    return render_template('cadastro_usuario.html', 
+                            title='Cadastro de Usuário', 
+                            form=formulario)

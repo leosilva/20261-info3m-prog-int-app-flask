@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+    <h1>Cadastro de Usuário</h1>
+    <form action="cadastrar" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.nome_completo.label }}<br/>
+            {{ form.nome_completo(size=50)}}
+        </p>
+        <p>
+            {{ form.email.label }}<br/>
+            {{ form.email(size=50)}}
+        </p>
+        <p>
+            {{ form.senha.label }}<br/>
+            {{ form.senha(size=32)}}
+        </p>
+        <p>
+            {{ form.confirmacao_senha.label }}<br/>
+            {{ form.confirmacao_senha(size=32)}}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
