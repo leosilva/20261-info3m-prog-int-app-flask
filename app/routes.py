@@ -7,6 +7,11 @@ from app.services.AuthenticationService import AuthenticationService
 from app.services.UsuarioService import UsuarioService
 
 
+@app.route('/index2')
+def index2():
+    return render_template('index2.html')
+
+
 @app.route('/')
 def home():
     usuario = {
