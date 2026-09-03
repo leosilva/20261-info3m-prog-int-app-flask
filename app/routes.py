@@ -37,7 +37,7 @@ def login():
     if formulario.validate_on_submit():
         if AuthenticationService.login(formulario):
             flash("Login efetuado com sucesso!")
-            return redirect("/")
+            return redirect("/index2")
         else:
             flash("Erro nas credenciais.")
             return redirect("/login")
