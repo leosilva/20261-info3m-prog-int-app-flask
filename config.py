@@ -1,4 +1,8 @@
-import secrets
+import os
+from urllib.parse import quote_plus
 
 class Config:
-    SECRET_KEY = secrets.token_hex(16)
+    SECRET_KEY = 'chave-secreta'
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "labinfo") 
+    DB_USERNAME = os.getenv("DB_USERNAME", "root")
+    SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://{DB_USERNAME}:{quote_plus(DB_PASSWORD)}@localhost:3306/2026-info3m"
