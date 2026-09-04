@@ -1,28 +1,38 @@
-{% extends "base.html" %}
+{% extends "base2.html" %}
 
 {% block conteudo %}
-    <h1>Cadastro de Usuário</h1>
-    <form action="cadastrar" method="post" novalidate>
-        {{ form.hidden_tag() }}
-        <p>
-            {{ form.nome_completo.label }}<br/>
-            {{ form.nome_completo(size=50)}}<br/>
-            {% for error in form.nome_completo.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.email.label }}<br/>
-            {{ form.email(size=50)}}
-        </p>
-        <p>
-            {{ form.senha.label }}<br/>
-            {{ form.senha(size=32)}}
-        </p>
-        <p>
-            {{ form.confirmacao_senha.label }}<br/>
-            {{ form.confirmacao_senha(size=32)}}
-        </p>
-        <p>{{ form.submit() }}</p>
-    </form>
+    <div class="card o-hidden border-0 shadow-lg my-5">
+        <div class="card-body p-0">
+            <!-- Nested Row within Card Body -->
+            <div class="row">
+                <div class="col-lg-5 d-none d-lg-block bg-register-image"></div>
+                <div class="col-lg-7">
+                    <div class="p-5">
+                        <div class="text-center">
+                            <h1 class="h4 text-gray-900 mb-4">Cadastro de Usuário</h1>
+                        </div>
+                        <form class="user" action="" method="post" novalidate>
+                            {{ form.hidden_tag() }}
+                            <div class="form-group">
+                                {{ form.nome_completo(size=50, class="form-control form-control-user", id="exampleFirstName", placeholder="Nome Completo")}}
+                            </div>
+                            <div class="form-group">
+                                {{ form.email(size=50, class="form-control form-control-user", id="exampleInputEmail", placeholder="Email")}}
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-sm-6 mb-3 mb-sm-0">
+                                    {{ form.senha(size=32, class="form-control form-control-user", id="exampleInputPassword", placeholder="Senha")}}
+                                </div>
+                                <div class="col-sm-6">
+                                    {{ form.confirmacao_senha(size=32, class="form-control form-control-user", id="exampleRepeatPassword", placeholder="Confirmação de Senha")}}
+                                </div>
+                            </div>
+                            {{ form.submit(class="btn btn-primary btn-user btn-block") }}
+                        </form>
+                        <hr>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

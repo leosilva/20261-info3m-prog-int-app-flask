@@ -46,16 +46,16 @@ def login():
                            form=formulario)
     
 
-@app.route('/cadastrar', methods=['GET', 'POST'])
-def cadastrar_usuario():
+@app.route('/inserir', methods=['GET', 'POST'])
+def inserir_usuario():
     formulario = UsuarioForm()
     if formulario.validate_on_submit():
         if UsuarioService.salvar(formulario):
-            flash("Usuario cadastrado com sucesso!")
-            return redirect("/")
+            flash("Usuario cadastrado com sucesso!", category="success")
+            return redirect("/index2")
         else:
-            flash("Usuário não cadastrado.")
-            return redirect("/cadastrar")
+            flash("Usuário não cadastrado.", category="warning")
+            return redirect("/inserir")
     return render_template('cadastro_usuario.html', 
                             title='Cadastro de Usuário', 
                             form=formulario)
