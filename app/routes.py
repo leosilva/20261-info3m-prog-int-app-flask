@@ -7,29 +7,18 @@ from app.services.AuthenticationService import AuthenticationService
 from app.services.UsuarioService import UsuarioService
 
 
-@app.route('/index2')
-def index2():
-    return render_template('index2.html')
-
-
 @app.route('/')
 def home():
-    usuario = {
-        "nome": "Leo",
-        "produtos": ["Banana", "Abacaxi", "Melancia"]
-    }
-    esta_logado = True
-    return render_template("index.html", pessoa = usuario,
-                           usuario_logado = esta_logado)
+    return render_template('index.html')
 
 
 @app.route('/sobre')
 def sobre():
-    return "Página sobre"
+    return render_template('sobre.html')
 
 @app.route('/endereco')
 def endereco():
-    return "<h1>Meu endereço</h1>"
+    return render_template('endereco.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -72,7 +61,7 @@ def buscar_usuario():
             print(usuario.username)
             print(usuario.email)
             UsuarioService.atualizar(usuario)
-        return render_template("index2.html")
+        return render_template("index.html")
                 
     
     
