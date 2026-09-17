@@ -1,5 +1,5 @@
 from app import app
-from flask import render_template, redirect, flash
+from flask import render_template, redirect, flash, request
 
 from app.forms.login_form import LoginForm
 from app.forms.usuario_form import UsuarioForm
@@ -59,3 +59,20 @@ def inserir_usuario():
     return render_template('cadastro_usuario.html', 
                             title='Cadastro de Usuário', 
                             form=formulario)
+    
+
+@app.route('/buscar_usuario', methods=['GET', 'POST'])
+def buscar_usuario():
+    if request.method == 'GET':
+        return render_template('buscar_usuario.html')
+    elif request.method == 'POST':
+        email_a_buscar = request.form.get("email")
+        if email_a_buscar:
+            usuario = UsuarioService.buscar_por_email(email_a_buscar)
+            print(usuario.username)
+            print(usuario.email)
+            UsuarioService.atualizar(usuario)
+        return render_template("index2.html")
+                
+    
+    
