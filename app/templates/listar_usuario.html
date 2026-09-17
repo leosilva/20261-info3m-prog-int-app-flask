@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block titulo %}Listagem de Usuário{% endblock %}
+
+{% block conteudo %}
+    <div class="card shadow mb-4 my-5">
+        <div class="card-header py-3">
+            <h1 class="h5 m-0 font-weight-bold text-primary">Listagem de Usuário</h1>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nome de Usuário</th>
+                            <th>E-mail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Usuario Teste</td>
+                            <td>email@email.com</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

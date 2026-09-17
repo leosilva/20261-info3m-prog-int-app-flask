@@ -41,7 +41,7 @@ def inserir_usuario():
     if formulario.validate_on_submit():
         if UsuarioService.salvar(formulario):
             flash("Usuario cadastrado com sucesso!", category="success")
-            return redirect("/index2")
+            return redirect("/")
         else:
             flash("Usuário não cadastrado.", category="warning")
             return redirect("/inserir")
@@ -62,6 +62,11 @@ def buscar_usuario():
             print(usuario.email)
             UsuarioService.atualizar(usuario)
         return render_template("index.html")
+
+
+@app.route('/listar_usuario')
+def listar_usuario():
+    return render_template('listar_usuario.html', title='Listagem de Usuário')
                 
     
     

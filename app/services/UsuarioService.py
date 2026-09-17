@@ -24,6 +24,10 @@ class UsuarioService():
         if usuario:
             return usuario
         return None
+
+    def listar():
+        query = sa.select(Usuario).order_by(Usuario.username)
+        return db.session.scalars(query).all()
     
     def atualizar(usuario):
         try:

@@ -43,18 +43,22 @@
             <span>Login</span></a>
     </li>
 
-    <!-- Nav Item - Cadastrar Usuário -->
+    <!-- Nav Item - Cadastros Básicos Collapse Menu -->
     <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('inserir_usuario') }}">
-            <i class="fas fa-fw fa-user-plus"></i>
-            <span>Cadastrar Usuário</span></a>
-    </li>
-
-    <!-- Nav Item - Buscar Usuário -->
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('buscar_usuario') }}">
-            <i class="fas fa-fw fa-search"></i>
-            <span>Buscar Usuário</span></a>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCadastrosBasicos"
+            aria-expanded="false" aria-controls="collapseCadastrosBasicos">
+            <i class="fas fa-fw fa-folder"></i>
+            <span>Cadastros Básicos</span>
+        </a>
+        <div id="collapseCadastrosBasicos" class="collapse" aria-labelledby="headingCadastrosBasicos"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Usuários:</h6>
+                <a class="collapse-item" href="{{ url_for('inserir_usuario') }}">Cadastro</a>
+                <a class="collapse-item" href="{{ url_for('listar_usuario') }}">Listagem</a>
+                <a class="collapse-item" href="{{ url_for('buscar_usuario') }}">Buscar</a>
+            </div>
+        </div>
     </li>
 
     <!-- Divider -->
