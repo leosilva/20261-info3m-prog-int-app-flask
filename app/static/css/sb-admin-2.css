@@ -10867,9 +10867,10 @@ a:focus {
 }
 
 .bg-register-image {
-  background: url("https://static.vecteezy.com/system/resources/thumbnails/023/088/728/small/register-here-sign-business-concept-advertising-banner-template-flat-design-vector.jpg");
+  background: url("https://www.gov.br/inpi/pt-br/plataforma-integrada-de-atendimento/logica-dos-servicos/arquivos/imagens/cadastro.png/@@images/image.png");
   background-position: center;
-  background-size: cover;
+  background-size: 50%;
+  background-repeat: no-repeat;
 }
 
 .bg-password-image {
