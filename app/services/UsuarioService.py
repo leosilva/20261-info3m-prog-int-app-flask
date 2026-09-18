@@ -6,9 +6,7 @@ class UsuarioService():
     def salvar(form):
         try:
             usuario = Usuario()
-            usuario.username = form.nome_completo.data
-            usuario.email = form.email.data
-            usuario.password_hash = form.senha.data
+            form.populate_obj(usuario)
             db.session.add(usuario)
             db.session.commit()
             return True
@@ -25,13 +23,19 @@ class UsuarioService():
             return usuario
         return None
 
+    
+    def buscar_por_id(id):
+        usuario = Usuario.query.get(id)
+        return usuario
+
+
     def listar():
-        query = sa.select(Usuario).order_by(Usuario.username)
+        query = sa.select(Usuario)
         return db.session.scalars(query).all()
     
-    def atualizar(usuario):
+    def atualizar(usuario, form):
         try:
-            usuario.email = "outro_email@email.com"
+            form.populate_obj(usuario)
             db.session.commit()
             return True
         except Exception as e:

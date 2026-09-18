@@ -14,13 +14,21 @@
                         <tr>
                             <th>Nome de Usuário</th>
                             <th>E-mail</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for usuario in usuarios %}
                         <tr>
-                            <td>Usuario Teste</td>
-                            <td>email@email.com</td>
+                            <td>{{ usuario.username }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>
+                                <a href="{{ url_for('editar', id=usuario.id) }}">
+                                    <i class="fa fa-light fa-pen"></i>
+                                </a>
+                            </td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

@@ -9,24 +9,21 @@
                 <div class="col-lg-7">
                     <div class="p-5">
                         <div class="text-center">
-                            <h1 class="h4 text-gray-900 mb-4">Cadastro de Usuário</h1>
+                            {% if editar %}
+                                <h1 class="h4 text-gray-900 mb-4">Editar Usuário</h1>
+                            {% else %}
+                                <h1 class="h4 text-gray-900 mb-4">Cadastro de Usuário</h1>
+                            {% endif %}
                         </div>
                         <form class="user" action="" method="post" novalidate>
                             {{ form.hidden_tag() }}
                             <div class="form-group">
-                                {{ form.nome_completo(size=50, class="form-control form-control-user", id="exampleFirstName", placeholder="Nome Completo")}}
+                                {{ form.username(size=50, class="form-control form-control-user", id="exampleFirstName", placeholder="Username")}}
                             </div>
                             <div class="form-group">
                                 {{ form.email(size=50, class="form-control form-control-user", id="exampleInputEmail", placeholder="Email")}}
                             </div>
-                            <div class="form-group row">
-                                <div class="col-sm-6 mb-3 mb-sm-0">
-                                    {{ form.senha(size=32, class="form-control form-control-user", id="exampleInputPassword", placeholder="Senha")}}
-                                </div>
-                                <div class="col-sm-6">
-                                    {{ form.confirmacao_senha(size=32, class="form-control form-control-user", id="exampleRepeatPassword", placeholder="Confirmação de Senha")}}
-                                </div>
-                            </div>
+                            
                             {{ form.submit(class="btn btn-primary btn-user btn-block") }}
                         </form>
                         <hr>

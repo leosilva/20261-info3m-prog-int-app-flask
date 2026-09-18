@@ -66,7 +66,22 @@ def buscar_usuario():
 
 @app.route('/listar_usuario')
 def listar_usuario():
-    return render_template('listar_usuario.html', title='Listagem de Usuário')
+    usuarios = UsuarioService.listar()
+    return render_template('listar_usuario.html', title='Listagem de Usuário', usuarios = usuarios)
                 
     
-    
+@app.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar(id):
+    usuario = UsuarioService.buscar_por_id(id)
+
+    form = UsuarioForm(obj=usuario)
+    if form.validate_on_submit():
+        sucesso = UsuarioService.atualizar(usuario, form)
+        if sucesso:
+            flash("Usuário atualizado com sucesso!", category='success')
+            return render_template('index.html')
+        else:
+            flash("Usuário não atualizado. Tente novamente mais tarde.", category='warning')
+            return render_template("cadastro_usuario.html", form=form, editar=True)
+
+    return render_template("cadastro_usuario.html", form=form, editar=True)    
