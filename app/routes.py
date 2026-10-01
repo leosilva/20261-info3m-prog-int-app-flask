@@ -45,7 +45,7 @@ def inserir_usuario():
         else:
             flash("Usuário não cadastrado.", category="warning")
             return redirect("/inserir")
-    return render_template('cadastro_usuario.html', 
+    return render_template('usuario/cadastro_usuario.html', 
                             title='Cadastro de Usuário', 
                             form=formulario)
     
@@ -53,7 +53,7 @@ def inserir_usuario():
 @app.route('/buscar_usuario', methods=['GET', 'POST'])
 def buscar_usuario():
     if request.method == 'GET':
-        return render_template('buscar_usuario.html')
+        return render_template('usuario/buscar_usuario.html')
     elif request.method == 'POST':
         email_a_buscar = request.form.get("email")
         if email_a_buscar:
@@ -67,7 +67,7 @@ def buscar_usuario():
 @app.route('/listar_usuario')
 def listar_usuario():
     usuarios = UsuarioService.listar()
-    return render_template('listar_usuario.html', title='Listagem de Usuário', usuarios = usuarios)
+    return render_template('usuario/listar_usuario.html', title='Listagem de Usuário', usuarios = usuarios)
                 
     
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
@@ -82,6 +82,20 @@ def editar(id):
             return render_template('index.html')
         else:
             flash("Usuário não atualizado. Tente novamente mais tarde.", category='warning')
-            return render_template("cadastro_usuario.html", form=form, editar=True)
+            return render_template("usuario/cadastro_usuario.html", form=form, editar=True)
 
-    return render_template("cadastro_usuario.html", form=form, editar=True)    
+    return render_template("usuario/cadastro_usuario.html", form=form, editar=True)    
+
+
+@app.route('/remover/<int:id>', methods=['GET'])
+def remover(id):
+    usuario = UsuarioService.buscar_por_id(id)
+    if usuario:
+        removeu = UsuarioService.remover(usuario)
+        if removeu:
+            flash("Usuário removido com sucesso!", category='success')
+        else:
+            flash("Usuário não removido. Tente novamente mais tarde.", category='warning')
+    else:
+        flash("Usuário não encontrado. Tente novamente mais tarde.", category='warning')
+    return redirect("/listar_usuario")

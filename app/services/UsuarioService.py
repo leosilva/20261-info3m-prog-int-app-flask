@@ -42,3 +42,13 @@ class UsuarioService():
             db.session.rollback()
             print(e)
             return False
+        
+    def remover(usuario):
+        try:
+            db.session.delete(usuario)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+            return False

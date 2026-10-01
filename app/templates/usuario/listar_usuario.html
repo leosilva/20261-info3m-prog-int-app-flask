@@ -26,6 +26,9 @@
                                 <a href="{{ url_for('editar', id=usuario.id) }}">
                                     <i class="fa fa-light fa-pen"></i>
                                 </a>
+                                <a href="{{ url_for('remover', id=usuario.id) }}">
+                                    <i class="fa fa-light fa-trash ml-2" style="color: red;"></i>
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
