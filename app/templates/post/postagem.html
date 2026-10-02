@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+    <div class="card o-hidden border-0 shadow-lg my-5">
+        <div class="card-body p-0">
+            <!-- Nested Row within Card Body -->
+            <div class="row">
+                <div class="col-lg-7">
+                    <div class="p-5">
+                        <div class="text-center">
+                            <h1 class="h4 text-gray-900 mb-4">Nova Postagem</h1>
+                        </div>
+                        <form class="user" action="" method="post" novalidate>
+                            {{ form.hidden_tag() }}
+                            <div class="form-group">
+                                {{ form.body(size=50, class="form-control", placeholder="Conteúdo da postagem")}}
+                            </div>                            
+                            {{ form.submit(class="btn btn-primary btn-user btn-block") }}
+                        </form>
+                        <hr>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

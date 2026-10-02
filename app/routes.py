@@ -3,8 +3,10 @@ from flask import render_template, redirect, flash, request
 
 from app.forms.login_form import LoginForm
 from app.forms.usuario_form import UsuarioForm
+from app.forms.post_form import Postform
 from app.services.AuthenticationService import AuthenticationService
 from app.services.UsuarioService import UsuarioService
+from app.services.PostService import PostService
 
 
 @app.route('/')
@@ -99,3 +101,19 @@ def remover(id):
     else:
         flash("Usuário não encontrado. Tente novamente mais tarde.", category='warning')
     return redirect("/listar_usuario")
+
+
+@app.route('/nova_postagem', methods=['GET', 'POST'])
+def nova_postagem():
+    formulario = Postform()
+    if formulario.validate_on_submit():
+        usuario = UsuarioService.buscar_por_id(1)
+        if PostService.salvar(formulario, usuario):
+            flash("Postagem realizada com sucesso!", category="success")
+            return redirect("/")
+        else:
+            flash("Postagem nã orealizada.", category="warning")
+            return redirect("/nova_postagem")
+    return render_template('post/postagem.html', 
+                            title='Nova Postagem', 
+                            form=formulario)
