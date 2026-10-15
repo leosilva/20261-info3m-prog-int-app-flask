@@ -1,5 +1,5 @@
 from app import app
-from flask import render_template, redirect, flash, request
+from flask import render_template, redirect, flash, request, url_for
 
 from app.forms.login_form import LoginForm
 from app.forms.usuario_form import UsuarioForm
@@ -43,7 +43,7 @@ def inserir_usuario():
     if formulario.validate_on_submit():
         if UsuarioService.salvar(formulario):
             flash("Usuario cadastrado com sucesso!", category="success")
-            return redirect("/")
+            return redirect(url_for('login'))
         else:
             flash("Usuário não cadastrado.", category="warning")
             return redirect("/inserir")
