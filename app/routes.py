@@ -22,16 +22,23 @@ def sobre():
 def endereco():
     return render_template('endereco.html')
 
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    success = AuthenticationService.logout()
+    if not success:
+        flash("Erro ao realizar logout.", "error")
+    return redirect(url_for("home"))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     formulario = LoginForm()
     if formulario.validate_on_submit():
         if AuthenticationService.login(formulario):
-            flash("Login efetuado com sucesso!")
-            return redirect("/index2")
+            flash("Login efetuado com sucesso!", category="success")
+            return redirect(url_for('home'))
         else:
-            flash("Erro nas credenciais.")
-            return redirect("/login")
+            flash("Usuário ou senha inválidos.", category="error")
     return render_template('login.html', 
                            title='Login', 
                            form=formulario)
