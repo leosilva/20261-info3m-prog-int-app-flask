@@ -7,6 +7,7 @@ from app.forms.post_form import Postform
 from app.services.AuthenticationService import AuthenticationService
 from app.services.UsuarioService import UsuarioService
 from app.services.PostService import PostService
+from flask_login import login_required
 
 
 @app.route('/')
@@ -36,7 +37,10 @@ def login():
     if formulario.validate_on_submit():
         if AuthenticationService.login(formulario):
             flash("Login efetuado com sucesso!", category="success")
-            return redirect(url_for('home'))
+            next_page = request.args.get('next')
+            if not next_page:
+                return redirect(url_for('home'))
+            return redirect(next_page)
         else:
             flash("Usuário ou senha inválidos.", category="error")
     return render_template('login.html', 
@@ -45,6 +49,7 @@ def login():
     
 
 @app.route('/inserir', methods=['GET', 'POST'])
+@login_required
 def inserir_usuario():
     formulario = UsuarioForm()
     if formulario.validate_on_submit():
@@ -74,6 +79,7 @@ def buscar_usuario():
 
 
 @app.route('/listar_usuario')
+@login_required
 def listar_usuario():
     usuarios = UsuarioService.listar()
     return render_template('usuario/listar_usuario.html', title='Listagem de Usuário', usuarios = usuarios)
