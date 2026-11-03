@@ -15,58 +15,64 @@
 \begin{titlepage}
 \thispagestyle{empty}
 \pagecolor{azul}
-\vspace*{1.25cm}
-{\color{white}\Large DESENVOLVIMENTO WEB}\par\vspace{1.35cm}
-{\color{white}\Huge\bfseries Tutorial de integração\\[.25cm]com o SUAP}\par\vspace{.45cm}
-{\color{white}\Large Login OAuth 2.0 e consumo da API\\em uma aplicação Flask}\par
-\vspace{.8cm}{\color{white}\large Guia prático do cadastro ao primeiro login}\par
-\vspace{4.25cm}
+\vspace*{1.45cm}
 \begin{center}
-\begin{tikzpicture}[node distance=1.2cm,>=Stealth]
-\node[draw=azul,fill=azulclaro,rounded corners=4pt,minimum width=3.2cm,minimum height=1.05cm,align=center] (u) {Pessoa usuária};
-\node[draw=azul,fill=azulclaro,rounded corners=4pt,minimum width=3.2cm,minimum height=1.05cm,align=center,right=of u] (f) {Aplicação Flask};
-\node[draw=verde,fill=green!8,rounded corners=4pt,minimum width=3.2cm,minimum height=1.05cm,align=center,right=of f] (s) {SUAP / OAuth 2.0};
-\draw[-{Stealth},thick,white] (u)--node[above=4pt,draw=none,font=\small,text=white]{1. iniciar}(f);
-\draw[-{Stealth},thick,ouro,bend left=24] (f.north east) to node[above=7pt,draw=none,font=\small,text=white]{2. autorizar}(s.north west);
-\draw[-{Stealth},thick,ouro,bend left=24] (s.south west) to node[below=7pt,draw=none,font=\small,text=white]{3. callback + código}(f.south east);
+{\color{ouro}\large GUIA DE INTEGRAÇÃO}\par\vspace{.9cm}
+{\color{white}\Huge\bfseries Tutorial de integração\\[.2cm]com o SUAP}\par\vspace{.55cm}
+{\color{white}\Large Login OAuth 2.0 e consumo da API em Flask}\par
+\vspace{.65cm}{\color{white}\large Do cadastro da aplicação ao primeiro login}\par
+\vspace{.45cm}{\color{ouro}\rule{.62\linewidth}{1.2pt}}
+\end{center}
+\vspace{2.25cm}
+\begin{center}
+\begin{tikzpicture}[node distance=1.45cm,>=Stealth]
+\node[draw=azul,fill=azulclaro,rounded corners=5pt,minimum width=3.6cm,minimum height=1.2cm,align=center] (u) {Pessoa usuária};
+\node[draw=azul,fill=azulclaro,rounded corners=5pt,minimum width=3.6cm,minimum height=1.2cm,align=center,right=of u] (f) {Aplicação Flask};
+\node[draw=verde,fill=green!8,rounded corners=5pt,minimum width=3.6cm,minimum height=1.2cm,align=center,right=of f] (s) {SUAP / OAuth 2.0};
+\draw[-{Stealth},thick,white] (u)--node[above=5pt,draw=none,font=\small,text=white]{1. iniciar}(f);
+\draw[-{Stealth},thick,ouro,bend left=22] (f.north east) to node[above=8pt,draw=none,font=\small,text=white]{2. autorizar}(s.north west);
+\draw[-{Stealth},thick,ouro,bend left=22] (s.south west) to node[below=8pt,draw=none,font=\small,text=white]{3. callback + código}(f.south east);
 \end{tikzpicture}
 \end{center}
 \vfill
-{\color{white}\large Exemplo didático com Flask e OAuth 2.0}\par
-{\color{white}\large Novembro de 2026}
+\begin{center}
+{\color{white}\large Flask\quad|\quad OAuth 2.0\quad|\quad SUAP}
+\end{center}
 \end{titlepage}
 \pagecolor{white}
 
-\section*{1. Como organizar a integração}
+\section{Visão geral}
+\subsection{Organização da integração}
 \noindent\colorbox{azulclaro}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textbf{Visão do exemplo.} O tutorial mostra uma implementação de referência em Flask: rotas, serviço OAuth, consulta ao perfil e vínculo local via \texttt{suap\_id}. Adapte os nomes de módulos e configurações ao seu aplicativo.}}
 \medskip
 O fluxo fica dividido por responsabilidade: as rotas iniciam OAuth e recebem o callback; um serviço monta URLs, troca o código por token e consulta o perfil; outro serviço associa o perfil a um usuário local e chama Flask-Login; o modelo guarda o vínculo; e o template apresenta o botão de entrada. A migration acrescenta a coluna sem apagar os usuários existentes.
 
-\clearpage
-\section*{Visão geral do fluxo de autenticação}
+\subsection{Fluxo de autenticação}
 O diagrama abaixo mostra o percurso completo da autorização até a sessão Flask-Login. Leia de cima para baixo: o navegador transporta a pessoa entre os sites, enquanto a troca do código por token acontece diretamente entre os servidores.
 \begin{center}
 \begin{tikzpicture}[x=.9cm,y=.9cm,>=Stealth, every node/.style={font=\large}]
 \node[draw=azul,fill=azulclaro,rounded corners=5pt,minimum width=4.3cm,minimum height=1.05cm,align=center] at (0,0) (user) {Pessoa usuária\\\small Navegador};
 \node[draw=azul,fill=azulclaro,rounded corners=5pt,minimum width=4.3cm,minimum height=1.05cm,align=center] at (7,0) (app) {Aplicação Flask\\\small Rotas + Flask-Login};
 \node[draw=verde,fill=green!8,rounded corners=5pt,minimum width=4.3cm,minimum height=1.05cm,align=center] at (14,0) (suap) {SUAP\\\small OAuth2 + API};
-\draw[dashed,gray,thick] (0,-.6)--(0,-9.6);
-\draw[dashed,gray,thick] (7,-.6)--(7,-9.6);
-\draw[dashed,gray,thick] (14,-.6)--(14,-9.6);
+\draw[dashed,gray,thick] (0,-.6)--(0,-11.3);
+\draw[dashed,gray,thick] (7,-.6)--(7,-11.3);
+\draw[dashed,gray,thick] (14,-.6)--(14,-11.3);
 \draw[-{Stealth},thick,azul] (0,-1.15)--(7,-1.15) node[midway,above,fill=white,align=center,text width=5.5cm,font=\normalsize]{1. Clica em “Entrar com SUAP”};
-\draw[-{Stealth},thick,azul] (7,-2.25)--(14,-2.25) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{2. Redireciona para autorização\\com client\_id, callback e state};
-\draw[-{Stealth},thick,verde] (14,-3.35)--(0,-3.35) node[midway,above,fill=white,align=center,text width=6cm,font=\normalsize]{3. SUAP exibe login e consentimento};
-\draw[-{Stealth},thick,verde] (0,-4.45)--(14,-4.45) node[midway,above,fill=white,align=center,text width=6cm,font=\normalsize]{4. Pessoa informa a senha no SUAP\\(ela não passa pelo Flask)};
-\draw[-{Stealth},thick,verde] (14,-5.55)--(7,-5.55) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{5. SUAP redireciona navegador\\ao callback com code + state};
-\draw[-{Stealth},thick,ouro] (7,-6.65)--(14,-6.65) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{6. Flask troca code por access token\\(client secret fica no servidor)};
-\draw[-{Stealth},thick,ouro] (7,-7.75)--(14,-7.75) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{7. Flask consulta API com Bearer token};
-\draw[-{Stealth},thick,azul] (7,-8.85)--(0,-8.85) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{8. Cria/carrega Usuario e abre sessão};
+\draw[-{Stealth},thick,azul] (7,-2.5)--(14,-2.5) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{2. Redireciona para autorização\\com client\_id, callback e state};
+\draw[-{Stealth},thick,verde] (14,-3.85)--(0,-3.85) node[midway,above,fill=white,align=center,text width=6cm,font=\normalsize]{3. SUAP mostra a tela\\de login e consentimento};
+\draw[-{Stealth},thick,verde] (0,-5.2)--(14,-5.2) node[midway,above,fill=white,align=center,text width=6cm,font=\normalsize]{4. Pessoa autentica no SUAP\\(a senha não vai ao Flask)};
+\draw[-{Stealth},thick,verde] (14,-6.55)--(7,-6.55) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{5. SUAP redireciona ao callback\\com code + state};
+\draw[-{Stealth},thick,ouro] (7,-7.9)--(14,-7.9) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{6. Flask troca code por token\\(client secret só no servidor)};
+\draw[-{Stealth},thick,ouro] (7,-9.25)--(14,-9.25) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{7. Flask consulta o perfil na API};
+\draw[-{Stealth},thick,azul] (7,-10.6)--(0,-10.6) node[midway,above,fill=white,align=center,text width=5.7cm,font=\normalsize]{8. Cria/carrega conta local};
 \end{tikzpicture}
 \end{center}
 \begin{center}\colorbox{azulclaro}{\parbox{.9\linewidth}{\textbf{Leitura rápida:} a senha do SUAP é digitada somente no site do SUAP. O Flask recebe um código temporário; o access token e o client secret são tratados no back-end.}}\end{center}
 \begin{center}\small Figura 1 — Fluxo OAuth2 Authorization Code integrado à sessão local do Flask.\end{center}
 
-\section*{2. Preparação: conta, URLs e tipo de cliente}
+\clearpage
+\section{Cadastro da aplicação no SUAP}
+\subsection{Conta, tipo de cliente e callback}
 É necessário ter uma conta ativa no SUAP/IFRN com permissão para registrar aplicações. Acesse \url{https://suap.ifrn.edu.br/api/} e crie uma aplicação OAuth2 (o painel pode pedir autenticação). Use estes valores para uma aplicação Flask executada localmente:
 \begin{itemize}[nosep]
 \item Nome: por exemplo, \texttt{Minha aplicação Flask (desenvolvimento)}.
@@ -77,16 +83,15 @@ O diagrama abaixo mostra o percurso completo da autorização até a sessão Fla
 \end{itemize}
 Cadastre a URI exatamente como será usada no Flask: host, porta, caminho e barra final precisam coincidir. Se testar com \texttt{localhost}, cadastre essa URI também; não presuma equivalência entre \texttt{localhost} e \texttt{127.0.0.1}. Para hospedagem, acrescente a URL HTTPS pública do callback. Anote \texttt{Client ID} e \texttt{Client Secret} no momento da criação; trate o segredo como senha e não o coloque no Git.
 
-\clearpage
-\section*{Cadastro no painel SUAP: sequência visual}
+\subsection{Sequência de cadastro no painel}
 Use esta sequência junto à tela de cadastro em \url{https://suap.ifrn.edu.br/api/}. Os nomes dos campos podem variar um pouco; os valores do exemplo devem corresponder ao ambiente em que o Flask está rodando.
 \begin{center}
-\begin{tikzpicture}[>=Stealth,node distance=1.45cm,every node/.style={font=\large}]
-\node[draw=azul,fill=azulclaro,rounded corners=6pt,minimum width=14.5cm,minimum height=1.35cm,align=left,text width=13.6cm] (n1) {\textbf{1. Abra o cadastro de aplicações}\hspace{.5em}Entre no SUAP com uma conta autorizada e acesse a área de API / aplicações OAuth2.};
-\node[draw=azul,fill=azulclaro,rounded corners=6pt,minimum width=14.5cm,minimum height=1.35cm,align=left,text width=13.6cm,below=of n1] (n2) {\textbf{2. Identifique sua aplicação}\hspace{.5em}Informe um nome reconhecível, por exemplo \texttt{Minha aplicação Flask — desenvolvimento}.};
-\node[draw=verde,fill=green!8,rounded corners=6pt,minimum width=14.5cm,minimum height=1.35cm,align=left,text width=13.6cm,below=of n2] (n3) {\textbf{3. Escolha o fluxo para servidor}\hspace{.5em}Client Type: \textbf{Confidential}. Grant Type: \textbf{Authorization Code}. Mantenha a aplicação ativa.};
-\node[draw=verde,fill=green!8,rounded corners=6pt,minimum width=14.5cm,minimum height=1.35cm,align=left,text width=13.6cm,below=of n3] (n4) {\textbf{4. Registre o callback exato}\hspace{.5em}\texttt{http://127.0.0.1:5000/suap/callback}. Cadastre também a URL HTTPS de produção quando publicar.};
-\node[draw=ouro,fill=yellow!15,rounded corners=6pt,minimum width=14.5cm,minimum height=1.35cm,align=left,text width=13.6cm,below=of n4] (n5) {\textbf{5. Guarde as credenciais}\hspace{.5em}Copie Client ID e Client Secret para variáveis de ambiente; não coloque o segredo no código nem no Git.};
+\begin{tikzpicture}[>=Stealth,node distance=1.05cm,every node/.style={font=\large}]
+\node[draw=azul,fill=azulclaro,rounded corners=6pt,minimum width=14.5cm,minimum height=1.15cm,align=left,text width=13.6cm] (n1) {\textbf{1. Abra o cadastro de aplicações}\hspace{.5em}Entre no SUAP com uma conta autorizada e acesse a área de API / aplicações OAuth2.};
+\node[draw=azul,fill=azulclaro,rounded corners=6pt,minimum width=14.5cm,minimum height=1.15cm,align=left,text width=13.6cm,below=of n1] (n2) {\textbf{2. Identifique sua aplicação}\hspace{.5em}Informe um nome reconhecível, por exemplo \texttt{Minha aplicação Flask — desenvolvimento}.};
+\node[draw=verde,fill=green!8,rounded corners=6pt,minimum width=14.5cm,minimum height=1.15cm,align=left,text width=13.6cm,below=of n2] (n3) {\textbf{3. Escolha o fluxo para servidor}\hspace{.5em}Client Type: \textbf{Confidential}. Grant Type: \textbf{Authorization Code}. Mantenha a aplicação ativa.};
+\node[draw=verde,fill=green!8,rounded corners=6pt,minimum width=14.5cm,minimum height=1.15cm,align=left,text width=13.6cm,below=of n3] (n4) {\textbf{4. Registre o callback exato}\hspace{.5em}\texttt{http://127.0.0.1:5000/suap/callback}. Cadastre também a URL HTTPS de produção quando publicar.};
+\node[draw=ouro,fill=yellow!15,rounded corners=6pt,minimum width=14.5cm,minimum height=1.15cm,align=left,text width=13.6cm,below=of n4] (n5) {\textbf{5. Guarde as credenciais}\hspace{.5em}Copie Client ID e Client Secret para variáveis de ambiente; não coloque o segredo no código nem no Git.};
 \draw[-{Stealth},very thick,azul] (n1)--(n2);
 \draw[-{Stealth},very thick,azul] (n2)--(n3);
 \draw[-{Stealth},very thick,azul] (n3)--(n4);
@@ -96,7 +101,9 @@ Use esta sequência junto à tela de cadastro em \url{https://suap.ifrn.edu.br/a
 \begin{center}\colorbox{yellow!15}{\parbox{.9\linewidth}{\textbf{Atenção à URI:} host, protocolo, porta, caminho e barra final precisam coincidir literalmente. \texttt{localhost} e \texttt{127.0.0.1} são endereços diferentes para a validação do callback.}}\end{center}
 \begin{center}\small Figura 2 — Cadastro de um cliente OAuth2 confidencial para desenvolvimento local.\end{center}
 
-\section*{3. Configurar credenciais e preparar o banco}
+\clearpage
+\section{Preparação do ambiente}
+\subsection{Clone do código e dependências}
 Esta etapa parte de um clone limpo. Instale Python 3.12 ou superior e MySQL Server. Se você já recebeu a pasta do projeto, comece na raiz \texttt{app\_flask}. No comando abaixo, substitua o endereço de exemplo pelo endereço Git fornecido pela turma:
 \begin{lstlisting}[language=bash]
 git clone URL_DO_REPOSITORIO app_flask
@@ -124,6 +131,7 @@ pip install -r requirements.txt
 \end{lstlisting}
 O serviço SUAP usa \texttt{urllib}, biblioteca padrão do Python. Não é necessário instalar \texttt{requests} nem uma dependência OAuth adicional.
 
+\subsection{Banco de dados MySQL}
 O pacote \texttt{mysql-connector-python} instalado pelo pip é o driver de conexão; ele não instala o servidor MySQL. Instale e inicie o MySQL Server no sistema operacional antes de criar o banco. Escolha um nome de banco e use o mesmo valor na configuração \texttt{DB\_NAME} do aplicativo. Neste exemplo, o banco se chama \texttt{suap\_flask\_app}:
 \begin{lstlisting}[language=bash]
 mysql -u root -p
@@ -133,6 +141,7 @@ No prompt do MySQL, execute:
 CREATE DATABASE `suap_flask_app` CHARACTER SET utf8mb4;
 EXIT;
 \end{lstlisting}
+\subsection{Variáveis de ambiente e segredos}
 O projeto carrega \texttt{.env} com \texttt{load\_dotenv()} em \texttt{config.py}; o \texttt{.gitignore} já exclui esse arquivo. Crie e edite-o na raiz:
 \begin{lstlisting}[language=bash]
 nano .env
@@ -159,6 +168,7 @@ SUAP_URL = os.getenv('SUAP_URL', 'https://suap.ifrn.edu.br')
 SUAP_CLIENT_ID = os.getenv('SUAP_CLIENT_ID')
 SUAP_CLIENT_SECRET = os.getenv('SUAP_CLIENT_SECRET')
 \end{lstlisting}
+\subsection{Campo de vínculo e migration do banco}
 No arquivo \texttt{app/models/usuario.py}, dentro da classe \texttt{Usuario}, adicione o campo abaixo. Ele é opcional para preservar as contas locais anteriores:
 \begin{lstlisting}[language=Python]
 suap_id = db.Column(db.String(64), unique=True, nullable=True)
@@ -169,10 +179,12 @@ flask db migrate -m "adiciona suap_id ao usuario"
 flask db upgrade
 flask db current
 \end{lstlisting}
-Abra o arquivo criado em \texttt{migrations/versions/} e confirme que ele adiciona \texttt{suap\_id} como anulável e com restrição única. Neste branch atualizado, a migration já existe: execute somente \texttt{flask db upgrade}, sem gerar outra migration. A pasta \texttt{migrations/} já existe, portanto não execute \texttt{flask db init}. Em um banco vazio, \texttt{upgrade} também cria as tabelas iniciais de usuário e postagem.
+Abra o arquivo criado em \texttt{migrations/versions/} e confirme que ele adiciona \texttt{suap\_id} como anulável e com restrição única. Se estiver usando uma cópia que já contém essa migration, execute somente \texttt{flask db upgrade}, sem gerar outra migration. Como a pasta \texttt{migrations/} já faz parte do projeto, não execute \texttt{flask db init}. Em um banco vazio, \texttt{upgrade} também cria as tabelas iniciais de usuário e postagem.
 \texttt{suap\_id} fica nulo nas contas locais já existentes. Ao entrar pelo SUAP, o serviço associa a conta pelo identificador informado no perfil. A chave gerada e salva como \texttt{SECRET\_KEY} no \texttt{.env} substitui o valor de desenvolvimento padrão de \texttt{config.py}; não exponha o valor padrão em produção.
 
-\section*{4. Como o serviço conversa com o SUAP}
+\clearpage
+\section{Implementar o serviço de acesso ao SUAP}
+\subsection{Autorização, token e consulta ao perfil}
 O serviço do projeto está em \path{app/services/SuapAuthenticationService.py}. Ele monta a URL de autorização, troca o código OAuth por token usando \texttt{client\_id} e \texttt{client\_secret}, e consulta o perfil com Bearer token. Abaixo está o código atual:
 Se estiver começando a partir de uma versão do projeto sem esse serviço, crie o arquivo no local indicado antes de copiar o código:
 \begin{lstlisting}[language=bash]
@@ -234,7 +246,9 @@ class SuapAuthenticationService:
 \end{lstlisting}
 Os caminhos usados pelo projeto são \path{/o/authorize/}, \path{/o/token/} e \path{/api/rh/meus-dados/}. Para outra instalação SUAP, altere \texttt{SUAP\_URL} e confira os campos do perfil na documentação interativa daquele ambiente.
 
-\section*{5. Rotas Flask: iniciar, validar e concluir o login}
+\clearpage
+\section{Implementar as rotas Flask}
+\subsection{Botão de login e redirecionamento para autorização}
 O link do botão em \texttt{app/templates/login.html} aponta para a rota \texttt{login\_suap}:
 \begin{lstlisting}[language=HTML]
 <a class="btn btn-secondary btn-user btn-block" href="{{ url_for('login_suap') }}">
@@ -259,6 +273,7 @@ def login_suap():
     session['suap_oauth_state'] = state
     return redirect(SuapAuthenticationService.authorization_url(state, redirect_uri))
 \end{lstlisting}
+\subsection{Callback e conclusão da autenticação}
 O callback valida o \texttt{state}, troca o código, busca os dados do perfil, vincula o usuário e exibe a página \texttt{suap\_eu.html}. O token fica em memória apenas durante a chamada e não é gravado no cookie de sessão:
 \begin{lstlisting}[language=Python]
 @app.route('/suap/callback')
@@ -295,7 +310,9 @@ def suap_callback():
 \end{lstlisting}
 O \texttt{state} vincula o início ao retorno OAuth e evita aceitar callbacks iniciados fora da sessão. Se o SUAP recusar o acesso, retornar sem código ou falhar ao consultar a API, a rota informa o erro e volta à tela de login. Depois do login, \texttt{suap\_eu.html} mostra nome, vínculo, matrícula, e-mail, campus e foto quando esses campos estiverem disponíveis.
 
-\section*{6. Associação do perfil e persistência em \texttt{suap\_id}}
+\clearpage
+\section{Vincular a identidade SUAP ao usuário local}
+\subsection{Método de autenticação}
 O usuário local continua sendo um modelo \texttt{Usuario} do SQLAlchemy e o Flask-Login mantém a sessão. Em \texttt{app/services/AuthenticationService.py}, o valor de \texttt{suap\_id} vem de matrícula, username ou e-mail do SUAP; o username local vem de nome usual ou nome. O serviço primeiro procura por \texttt{suap\_id}; se ainda não houver vínculo, procura uma conta local compatível e associa-a:
 \begin{lstlisting}[language=Python]
 from app import db
@@ -352,20 +369,12 @@ class AuthenticationService():
         login_user(user)
         return user
 \end{lstlisting}
-O modelo declara o campo assim:
-\begin{lstlisting}[language=Python]
-suap_id = db.Column(db.String(64), unique=True, nullable=True)
-\end{lstlisting}
-O campo aceita \texttt{NULL} para não exigir uma identidade SUAP das contas criadas pela aplicação. A restrição \texttt{unique=True} evita associar o mesmo identificador remoto a mais de uma conta. A senha SUAP não é copiada para \texttt{password\_hash}; a autenticação remota é validada pelo protocolo OAuth e a sessão local é aberta por \texttt{login\_user(user)}.
+\subsection{Vínculo persistente e sessão Flask-Login}
+O campo \texttt{suap\_id}, criado na seção anterior, aceita \texttt{NULL} para contas locais e tem restrição única. O método procura primeiro por esse identificador, reaproveita uma conta local compatível quando encontra uma e então associa a identidade SUAP. A senha SUAP não é copiada para \texttt{password\_hash}; depois de salvar o vínculo, \texttt{login\_user(user)} abre a sessão local.
 
-A migration deve ser gerada por cada aluno a partir do modelo atualizado. Execute os comandos a partir da raiz do projeto:
-\begin{lstlisting}[language=bash]
-flask db migrate -m "adiciona suap_id ao usuario"
-flask db upgrade
-\end{lstlisting}
-O Alembic cria automaticamente um identificador de revisão para o arquivo. Esse identificador pode variar entre cópias; não o escreva manualmente nem copie o de outra pessoa. Antes de aplicar a migration, confira se ela adiciona uma coluna anulável e única. Neste checkout, a migration já está incluída, então basta executar \texttt{flask db upgrade}.
-
-\section*{7. Executar e percorrer o fluxo completo}
+\clearpage
+\section{Executar e percorrer o fluxo completo}
+\subsection{Aplicar a migration e iniciar o servidor}
 Ative o ambiente virtual e instale as dependências declaradas no aplicativo. Confirme que o MySQL está ativo, que o banco escolhido existe e que o arquivo \texttt{.env} contém as credenciais da aplicação. Aplique a migration adicionada e inicie o Flask na mesma porta e host usados no cadastro SUAP:
 \begin{lstlisting}[language=bash]
 flask db upgrade
@@ -373,7 +382,9 @@ flask run --host 127.0.0.1 --port 5000 --debug
 \end{lstlisting}
 Abra \url{http://127.0.0.1:5000/login}, clique em “Entrar com SUAP”, autentique-se no domínio do SUAP e autorize o acesso. O navegador retorna a \texttt{/suap/callback}; a aplicação valida \texttt{state}, troca o código por token, chama \texttt{/api/rh/meus-dados/}, cria ou encontra o registro com \texttt{suap\_id}, inicia sessão Flask-Login e mostra \texttt{suap\_eu.html}. Confirme o nome e os dados do perfil; em seguida, teste sair por \texttt{/logout} e entrar novamente pelo botão SUAP.
 
-\section*{8. Diagnóstico rápido}
+\clearpage
+\section{Diagnóstico e referências}
+\subsection{Solução de problemas}
 \begin{itemize}
 \item \textbf{redirect URI inválida}: o callback usa host da requisição e rota \texttt{suap\_callback}. Compare protocolo, host, porta e caminho com o cadastro no SUAP.
 \item \textbf{client inválido}: confira se Client ID/Secret correspondem à aplicação ativa e se o segredo não contém espaços adicionais.
@@ -383,7 +394,7 @@ Abra \url{http://127.0.0.1:5000/login}, clique em “Entrar com SUAP”, autenti
 \item \textbf{usuário autentica, mas áreas protegidas redirecionam}: confira vínculo ao modelo \texttt{Usuario}, chamada a \texttt{login\_user} e função \texttt{load\_user}.
 \end{itemize}
 
-\section*{9. Referências e observação de segurança}
+\subsection{Referências e segurança}
 \begin{itemize}
 \item Documentação interativa oficial: \url{https://suap.ifrn.edu.br/api/docs/}.
 \item Cadastro e acesso à API: \url{https://suap.ifrn.edu.br/api/}.
