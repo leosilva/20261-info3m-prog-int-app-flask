@@ -1,5 +1,7 @@
 from app import app
-from flask import render_template, redirect, flash, request, url_for
+from flask import render_template, redirect, flash, request, url_for, session
+from secrets import token_urlsafe
+from urllib.parse import urljoin
 
 from app.forms.login_form import LoginForm
 from app.forms.usuario_form import UsuarioForm
@@ -7,6 +9,7 @@ from app.forms.post_form import Postform
 from app.services.AuthenticationService import AuthenticationService
 from app.services.UsuarioService import UsuarioService
 from app.services.PostService import PostService
+from app.services.SuapAuthenticationService import SuapAuthenticationService
 from flask_login import login_required
 
 
@@ -27,6 +30,7 @@ def endereco():
 @app.route('/logout', methods=['GET'])
 def logout():
     success = AuthenticationService.logout()
+    session.clear()
     if not success:
         flash("Erro ao realizar logout.", "error")
     return redirect(url_for("home"))
@@ -46,6 +50,53 @@ def login():
     return render_template('login.html', 
                            title='Login', 
                            form=formulario)
+
+
+@app.route('/login-suap')
+def login_suap():
+    state = token_urlsafe(32)
+    redirect_uri = request.host_url.rstrip('/') + url_for('suap_callback')
+    session['suap_oauth_state'] = state
+    return redirect(SuapAuthenticationService.authorization_url(state, redirect_uri))
+
+
+@app.route('/suap/callback')
+def suap_callback():
+    state = session.pop('suap_oauth_state', None)
+    if request.args.get('error') or not state or state != request.args.get('state', ''):
+        flash('Falha na autenticação do SUAP.', 'error')
+        return redirect(url_for('login'))
+
+    code = request.args.get('code')
+    if not code:
+        flash('Código de autorização do SUAP não recebido.', 'error')
+        return redirect(url_for('login'))
+
+    redirect_uri = request.host_url.rstrip('/') + url_for('suap_callback')
+    tokens = SuapAuthenticationService.exchange_code(code, redirect_uri)
+    if not tokens or not tokens.get('access_token'):
+        flash('Não foi possível obter o token do SUAP.', 'error')
+        return redirect(url_for('login'))
+
+    session['suap_access_token'] = tokens['access_token']
+    return redirect(url_for('suap_meus_dados'))
+
+
+@app.route('/suap/meus_dados')
+def suap_meus_dados():
+    access_token = session.get('suap_access_token')
+    if not access_token:
+        return redirect(url_for('login_suap'))
+    dados = SuapAuthenticationService.meus_dados(access_token)
+    if dados is None:
+        session.pop('suap_access_token', None)
+        flash('Não foi possível consultar os dados do SUAP.', 'error')
+        return redirect(url_for('login_suap'))
+    AuthenticationService.login_suap(dados)
+    foto = dados.get('url_foto_75x100') or dados.get('url_foto') or dados.get('foto')
+    foto_url = urljoin(app.config['SUAP_URL'] + '/', foto) if foto else None
+
+    return render_template('suap_eu.html', title='Perfil SUAP', dados=dados, foto_url=foto_url)
     
 
 @app.route('/inserir', methods=['GET', 'POST'])

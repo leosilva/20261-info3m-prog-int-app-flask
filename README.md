@@ -64,6 +64,17 @@ export DB_USERNAME=seu_usuario
 export DB_PASSWORD=sua_senha
 ```
 
+## Configuração do login com SUAP
+
+Defina as credenciais OAuth2 da aplicação cadastrada no SUAP e a mesma URL de callback cadastrada na aplicação:
+
+```bash
+export SUAP_CLIENT_ID=seu_client_id
+export SUAP_CLIENT_SECRET=seu_client_secret
+```
+
+O link `Entrar com SUAP` redireciona para o SUAP e retorna para `/suap/callback`. A aplicação usa automaticamente o host atual (`localhost` ou `127.0.0.1`).
+
 O nome do banco, host e porta estão definidos em `config.py` como `2026-info3m`, `localhost` e `3306`. Na primeira inicialização, as tabelas são criadas automaticamente pelo SQLAlchemy.
 
 ## Executando o projeto
