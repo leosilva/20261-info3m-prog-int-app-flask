@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = 'chave-secreta'
+    SECRET_KEY = os.getenv('SECRET_KEY', 'chave-secreta')
     SUAP_URL = os.getenv('SUAP_URL', 'https://suap.ifrn.edu.br')
     SUAP_CLIENT_ID = os.getenv('SUAP_CLIENT_ID')
     SUAP_CLIENT_SECRET = os.getenv('SUAP_CLIENT_SECRET')

@@ -78,24 +78,18 @@ def suap_callback():
         flash('Não foi possível obter o token do SUAP.', 'error')
         return redirect(url_for('login'))
 
-    session['suap_access_token'] = tokens['access_token']
-    return redirect(url_for('suap_meus_dados'))
-
-
-@app.route('/suap/meus_dados')
-def suap_meus_dados():
-    access_token = session.get('suap_access_token')
-    if not access_token:
-        return redirect(url_for('login_suap'))
-    dados = SuapAuthenticationService.meus_dados(access_token)
+    dados = SuapAuthenticationService.meus_dados(tokens['access_token'])
     if dados is None:
-        session.pop('suap_access_token', None)
         flash('Não foi possível consultar os dados do SUAP.', 'error')
-        return redirect(url_for('login_suap'))
-    AuthenticationService.login_suap(dados)
+        return redirect(url_for('login'))
+
+    usuario = AuthenticationService.login_suap(dados)
+    if usuario is None:
+        flash('Não foi possível vincular esta conta SUAP a um usuário local.', 'error')
+        return redirect(url_for('login'))
+
     foto = dados.get('url_foto_75x100') or dados.get('url_foto') or dados.get('foto')
     foto_url = urljoin(app.config['SUAP_URL'] + '/', foto) if foto else None
-
     return render_template('suap_eu.html', title='Perfil SUAP', dados=dados, foto_url=foto_url)
     
 

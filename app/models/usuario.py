@@ -7,4 +7,5 @@ class Usuario(db.Model, UserMixin):
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     email = db.Column(db.String(64), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
+    suap_id = db.Column(db.String(64), unique=True, nullable=True)
     posts = db.relationship('Post', back_populates='author')

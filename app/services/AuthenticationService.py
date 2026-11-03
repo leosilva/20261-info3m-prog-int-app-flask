@@ -19,16 +19,31 @@ class AuthenticationService():
         return logout_user()
 
     def login_suap(dados):
-        username = str(dados.get('matricula') or dados.get('username') or dados.get('email'))
+        suap_id = str(dados.get('matricula') or dados.get('username') or dados.get('email') or '').strip()
+        if not suap_id:
+            return None
+
+        username = str(dados.get('nome_usual') or dados.get('nome') or '').strip()
         email = dados.get('email') or f'{username}@suap.local'
-        user = Usuario.query.filter(
-            (Usuario.username == username) | (Usuario.email == email)
-        ).first()
+        user = Usuario.query.filter_by(suap_id=suap_id).first()
 
         if not user:
-            user = Usuario(username=username, email=email)
+            user = Usuario.query.filter((Usuario.username == username) | (Usuario.email == email)).first()
+
+        if user and user.suap_id and user.suap_id != suap_id:
+            return None
+
+        if not user:
+            user = Usuario(username=username, email=email, suap_id=suap_id)
             db.session.add(user)
+        else:
+            user.suap_id = suap_id
+
+        try:
             db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return None
 
         login_user(user)
         return user
