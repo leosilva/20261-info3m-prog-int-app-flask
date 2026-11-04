@@ -23,7 +23,7 @@ class AuthenticationService():
         if not suap_id:
             return None
 
-        username = str(dados.get('nome_usual') or dados.get('nome') or '').strip()
+        username = suap_id
         email = dados.get('email') or f'{username}@suap.local'
         user = Usuario.query.filter_by(suap_id=suap_id).first()
 

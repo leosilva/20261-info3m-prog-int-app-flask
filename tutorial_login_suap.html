@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tutorial: login com SUAP em Flask</title>
+<style>
+@page{size:A4;margin:16mm 15mm 17mm}*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:#1d2939;font-size:10.5pt;line-height:1.42}h1{color:#123b68;font-size:24pt;margin:0 0 12px}h2{color:#123b68;font-size:18pt;border-bottom:2px solid #2f80ed;padding-bottom:5px;margin:0 0 15px}h3{color:#176b45;font-size:13pt;margin:17px 0 6px}p{margin:7px 0}ul,ol{margin-top:5px}li{margin:4px 0}code{font-family:Menlo,Monaco,monospace;color:#7b2d26;background:#f2f4f7;padding:1px 3px;border-radius:3px}pre{font-family:Menlo,Monaco,monospace;font-size:8.2pt;line-height:1.3;white-space:pre-wrap;background:#f3f6f8;border-left:4px solid #2f80ed;padding:10px 12px;margin:9px 0 13px}.page{page-break-before:always}.cover{page-break-after:always;min-height:245mm;padding:25mm 10mm 12mm;background:linear-gradient(145deg,#123b68,#176b45);color:white;text-align:center}.cover h1{color:white;font-size:29pt;margin-top:22mm}.cover h2{color:#ffe08a;border:0;font-size:16pt}.cover p{font-size:13pt}.cover img{width:100%;max-height:75mm;object-fit:contain;margin:18mm 0 12mm;background:white;padding:4mm}.lead{background:#eaf4ff;border-left:5px solid #2f80ed;padding:10px 13px;margin:10px 0}.warning{background:#fff7df;border-left:5px solid #e5a400;padding:10px 13px;margin:10px 0}.success{background:#eaf8ef;border-left:5px solid #219653;padding:10px 13px;margin:10px 0}.figure{text-align:center;margin:12px 0 15px;page-break-inside:avoid}.figure img{max-width:100%;max-height:100mm;object-fit:contain}.caption{color:#667085;font-size:8.5pt;margin-top:4px}.smallimg{max-height:68mm!important}.footer-note{color:#667085;font-size:8.5pt;margin-top:18px}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:9.4pt}th{background:#123b68;color:white;text-align:left}td,th{border:1px solid #cbd5e1;padding:6px 7px;vertical-align:top}
+</style>
+</head>
+<body>
+<section class="cover">
+<div style="letter-spacing:2px;color:#ffe08a;font-weight:bold">GUIA PRÁTICO</div>
+<h1>Como adicionar login com SUAP a uma aplicação Flask</h1>
+<h2>OAuth 2.0 · Authorization Code · Flask-Login</h2>
+<p>Manual técnico fundamentado na estrutura e na implementação de uma aplicação Flask.</p>
+<img src="file:///Users/leosilva/development/ifrn/20261/3ano/prog_int/app_flask/materiais/fluxo-login-oauth.png" alt="Fluxo de login OAuth 2.0">
+<p style="font-size:11pt">Do cadastro da aplicação no SUAP ao primeiro login concluído</p>
+</section>
+
+<section class="page">
+<h2>1. Objetivo e escopo da integração</h2>
+<p>Este tutorial apresenta a incorporação do mecanismo de autenticação do SUAP a uma aplicação Flask. O processo disponibiliza o recurso <strong>Entrar com SUAP</strong>, redireciona o usuário para o provedor de identidade, recebe um código temporário de autorização, realiza a troca desse código por um token e consulta os dados do perfil para estabelecer o vínculo com o usuário local.</p>
+<div class="lead"><strong>Princípio de segurança:</strong> a senha é informada exclusivamente ao SUAP. A aplicação Flask não recebe, não processa e não armazena essa credencial.</div>
+<h3>Resultados esperados</h3>
+<ol><li>O login local continua funcionando.</li><li>A tela de login ganha um botão para entrar pelo SUAP.</li><li>O perfil retornado pelo SUAP é associado ao modelo local <code>Usuario</code>.</li><li>O Flask-Login inicia a sessão.</li><li>Uma página exibe os dados do perfil.</li></ol>
+<h3>Arquivos envolvidos</h3>
+<table><tr><th>Arquivo</th><th>Responsabilidade</th></tr>
+<tr><td><code>config.py</code></td><td>Lê URL, client ID, segredo e chave de sessão.</td></tr>
+<tr><td><code>app/models/usuario.py</code></td><td>Guarda o identificador que vincula usuário local e SUAP.</td></tr>
+<tr><td><code>app/services/SuapAuthenticationService.py</code></td><td>Monta autorização, troca código por token e consulta API.</td></tr>
+<tr><td><code>app/services/AuthenticationService.py</code></td><td>Localiza/cria a conta e chama <code>login_user</code>.</td></tr>
+<tr><td><code>app/routes.py</code></td><td>Inicia o fluxo e recebe o callback.</td></tr>
+<tr><td><code>app/templates/login.html</code></td><td>Apresenta o botão.</td></tr>
+<tr><td><code>app/templates/suap_eu.html</code></td><td>Mostra o perfil.</td></tr></table>
+</section>
+
+<section class="page">
+<h2>2. Fluxo de autenticação OAuth 2.0</h2>
+<div class="figure"><img src="file:///Users/leosilva/development/ifrn/20261/3ano/prog_int/app_flask/materiais/fluxo-login-oauth.png" alt="Diagrama didático do fluxo OAuth 2.0"><div class="caption">Figura 1 — Fluxo Authorization Code usado na integração.</div></div>
+<ol><li>1. A aplicação gera um <code>state</code> aleatório e o guarda na sessão.</li><li>2. O navegador é redirecionado para <code>/o/authorize/</code> no SUAP.</li><li>3. A pessoa faz login e autoriza o acesso.</li><li>4. O SUAP retorna à aplicação com <code>code</code> e <code>state</code>.</li><li>5. O servidor confere o <code>state</code> e envia o <code>code</code> para <code>/o/token/</code>.</li><li>6. O SUAP devolve um <code>access_token</code>.</li><li>7. O Flask consulta <code>/api/rh/meus-dados/</code> usando Bearer token.</li><li>8. Os dados identificam ou criam o usuário local.</li></ol>
+<div class="warning"><strong>Finalidade do parâmetro <code>state</code>:</strong> estabelecer a correspondência entre a solicitação de autenticação e o retorno à sessão que a originou. Caso os valores sejam distintos, o callback deve ser rejeitado.</div>
+<p>O <code>client_secret</code> aparece somente entre o servidor Flask e o SUAP. Ele nunca deve ser colocado em HTML, JavaScript do navegador, repositório ou logs.</p>
+</section>
+
+<section class="page">
+<h2>3. Preparação do ambiente de execução</h2>
+<h3>3.1 Criar o ambiente Python</h3>
+<pre>python -m venv .venv
+source .venv/bin/activate          # Linux/macOS
+# .venv\Scripts\activate            # Windows
+python -m pip install --upgrade pip
+pip install -r requirements.txt</pre>
+<p>O projeto usa Flask, Flask-Login, Flask-SQLAlchemy, Flask-Migrate, python-dotenv e o driver do MySQL.</p>
+<h3>3.2 Criar o banco</h3>
+<pre>mysql -u root -p
+CREATE DATABASE suap_flask_app CHARACTER SET utf8mb4;
+EXIT;</pre>
+<p>Devem ser configurados, em <code>config.py</code>, o nome do banco de dados, o usuário, a senha, o endereço do servidor e a porta de comunicação. A implementação utiliza o driver <code>mysql+mysqlconnector</code>.</p>
+<h3>3.3 Configurar variáveis de ambiente</h3>
+<p>Deve ser criado um arquivo <code>.env</code> no diretório raiz do projeto:</p>
+<pre>SECRET_KEY=uma-chave-aleatoria-e-secreta
+DB_USERNAME=root
+DB_PASSWORD=sua_senha_do_mysql
+SUAP_URL=https://suap.ifrn.edu.br
+SUAP_CLIENT_ID=seu_client_id
+SUAP_CLIENT_SECRET=seu_client_secret</pre>
+<p>Recomenda-se gerar uma chave criptograficamente forte por meio do comando:</p>
+<pre>python -c "import secrets; print(secrets.token_hex(32))"</pre>
+<div class="warning"><strong>As credenciais não devem ser versionadas.</strong> Caso um segredo seja exposto, ele deve ser revogado no painel do SUAP e substituído imediatamente.</div>
+</section>
+
+<section class="page">
+<h2>4. Registro da aplicação no SUAP</h2>
+<p>O registro da aplicação fornece o <code>Client ID</code> e o <code>Client Secret</code>. Embora a nomenclatura da interface possa variar, os parâmetros devem obedecer às seguintes definições:</p>
+<p>A documentação oficial da API do SUAP deve ser consultada para acessar a área de criação e configuração da aplicação OAuth2:</p>
+<pre>https://suap.ifrn.edu.br/api/docs/</pre>
+<p>Nessa documentação, localize a seção relacionada à autenticação OAuth2 e utilize o painel correspondente para registrar o cliente, definir o tipo <strong>Confidential</strong>, selecionar o fluxo <strong>Authorization Code</strong> e informar a URI de redirecionamento.</p>
+<ol><li>Acesse a área de APIs ou aplicações OAuth e autentique-se.</li><li>Registre uma nova aplicação.</li><li>Selecione o tipo de cliente <strong>Confidential</strong>, pois o segredo será mantido no servidor.</li><li>Selecione o grant <strong>Authorization Code</strong>.</li><li>Informe a URI local:</li></ol>
+<pre>http://127.0.0.1:5000/suap/callback</pre>
+<ol start="6"><li>Salve o registro e transfira as credenciais para o arquivo <code>.env</code>.</li></ol>
+<div class="warning"><strong>A URI deve ser idêntica.</strong> Protocolo, host, porta, caminho e barra final fazem parte da validação. <code>localhost</code> e <code>127.0.0.1</code> não devem ser tratados como equivalentes.</div>
+<h3>Configuração para produção</h3>
+<p>Para o ambiente de produção, deve ser registrada uma URI HTTPS específica, por exemplo:</p>
+<pre>https://app.exemplo.org/suap/callback</pre>
+<p>Devem ser utilizadas credenciais distintas em cada ambiente; o segredo empregado no desenvolvimento não deve ser reutilizado em produção.</p>
+</section>
+
+<section class="page">
+<h2>5. Atualização do modelo e do banco de dados</h2>
+<h3>5.1 Adicionar o identificador SUAP</h3>
+<p>Na classe <code>Usuario</code>, deve ser acrescentada uma coluna opcional e de valor único:</p>
+<pre>class Usuario(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    email = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    password_hash = db.Column(db.String(256))
+    suap_id = db.Column(db.String(64), unique=True, nullable=True)
+    posts = db.relationship('Post', back_populates='author')</pre>
+<p><code>nullable=True</code> preserva as contas antigas, que ainda não possuem vínculo SUAP.</p>
+<h3>5.2 Gerar e aplicar a migration</h3>
+<pre>flask db migrate -m "adiciona identificador SUAP ao usuario"
+flask db upgrade
+flask db current</pre>
+<p>Deve-se verificar o arquivo de migration em <code>migrations/versions/</code>, confirmando a criação de <code>suap_id</code> com restrição de unicidade. Caso a migration já esteja presente no projeto, deve ser executado somente <code>flask db upgrade</code>.</p>
+<div class="warning"><strong>Não execute <code>flask db init</code></strong> em um projeto que já possui a pasta <code>migrations</code>.</div>
+<h3>5.3 Revisão ausente</h3>
+<p>Se for apresentada a mensagem “Can't locate revision”, o banco de dados estará referenciando uma revisão ausente nos arquivos locais. A migration correspondente deverá ser recuperada antes da atualização. A tabela <code>alembic_version</code> não deve ser alterada manualmente sem a confirmação da compatibilidade do schema.</p>
+</section>
+
+<section class="page">
+<h2>6. Implementação do serviço de comunicação</h2>
+<p>O arquivo <code>app/services/SuapAuthenticationService.py</code> concentra as requisições HTTP destinadas ao SUAP.</p>
+<h3>6.1 Construção da URL de autorização</h3>
+<pre>@staticmethod
+def authorization_url(state, redirect_uri):
+    params = urlencode({
+        'response_type': 'code',
+        'client_id': app.config['SUAP_CLIENT_ID'],
+        'redirect_uri': redirect_uri,
+        'state': state,
+    })
+    return f"{app.config['SUAP_URL']}/o/authorize/?{params}"</pre>
+<p>A URL é encaminhada ao navegador. A aplicação informa sua identidade e o endereço de retorno, sem transmitir a senha do usuário.</p>
+<h3>6.2 Troca do código por token</h3>
+<pre>data = urlencode({
+    'grant_type': 'authorization_code',
+    'code': code,
+    'redirect_uri': redirect_uri,
+    'client_id': app.config['SUAP_CLIENT_ID'],
+    'client_secret': app.config['SUAP_CLIENT_SECRET'],
+}).encode()
+
+with urlopen(Request(
+    f"{app.config['SUAP_URL']}/o/token/",
+    data=data,
+    headers={'Content-Type': 'application/x-www-form-urlencoded'},
+)) as response:
+    return json.load(response)</pre>
+<p>O código possui validade temporária e utilização única. Em caso de falha, o serviço retorna <code>None</code>.</p>
+<h3>6.3 Consulta ao perfil</h3>
+<pre>request = Request(
+    f"{app.config['SUAP_URL']}/api/rh/meus-dados/",
+    headers={
+        'Authorization': f'Bearer {access_token}',
+        'Accept': 'application/json',
+    },
+)</pre>
+<p>O token é enviado no cabeçalho HTTP <code>Authorization: Bearer ...</code>.</p>
+</section>
+
+<section class="page">
+<h2>7. Implementação das rotas Flask</h2>
+<h3>7.1 Rota de início da autenticação</h3>
+<pre>@app.route('/login-suap')
+def login_suap():
+    state = token_urlsafe(32)
+    redirect_uri = request.host_url.rstrip('/') + url_for('suap_callback')
+    session['suap_oauth_state'] = state
+    return redirect(SuapAuthenticationService.authorization_url(state, redirect_uri))</pre>
+<p>A URI de callback é construída a partir do host da requisição. Consequentemente, o host e a porta registrados no SUAP devem coincidir com o endereço utilizado pelo navegador.</p>
+<h3>7.2 Rota de retorno (callback)</h3>
+<pre>@app.route('/suap/callback')
+def suap_callback():
+    state = session.pop('suap_oauth_state', None)
+    if request.args.get('error') or not state \
+       or state != request.args.get('state', ''):
+        flash('Falha na autenticação do SUAP.', 'error')
+        return redirect(url_for('login'))
+
+    code = request.args.get('code')
+    if not code:
+        flash('Código de autorização não recebido.', 'error')
+        return redirect(url_for('login'))
+
+    redirect_uri = request.host_url.rstrip('/') + url_for('suap_callback')
+    tokens = SuapAuthenticationService.exchange_code(code, redirect_uri)
+    dados = SuapAuthenticationService.meus_dados(tokens['access_token'])
+    usuario = AuthenticationService.login_suap(dados)</pre>
+<div class="success"><strong>Sequência de processamento:</strong> validar <code>state</code> → validar <code>code</code> → trocar o código → consultar o perfil → vincular a conta → iniciar a sessão.</div>
+</section>
+
+<section class="page">
+<h2>8. Vinculação da identidade SUAP ao usuário local</h2>
+<p>Em <code>AuthenticationService.login_suap</code>, a aplicação determina o identificador do usuário segundo a seguinte precedência: matrícula, username ou endereço de e-mail.</p>
+<pre>suap_id = str(
+    dados.get('matricula') or
+    dados.get('username') or
+    dados.get('email') or ''
+).strip()
+
+if not suap_id:
+    return None
+
+email = dados.get('email') or f'{suap_id}@suap.local'
+user = Usuario.query.filter_by(suap_id=suap_id).first()
+
+if not user:
+    user = Usuario.query.filter(
+        (Usuario.username == suap_id) | (Usuario.email == email)
+    ).first()</pre>
+<h3>Critérios de vinculação</h3>
+<ol><li>Pesquisa-se inicialmente um usuário que já possua o <code>suap_id</code>.</li><li>Na ausência desse registro, pesquisa-se uma conta com username ou e-mail compatível.</li><li>Não havendo correspondência, cria-se um novo objeto <code>Usuario</code>.</li><li>A associação é persistida e <code>login_user(user)</code> inicia a sessão.</li></ol>
+<pre>if not user:
+    user = Usuario(username=suap_id, email=email, suap_id=suap_id)
+    db.session.add(user)
+else:
+    user.suap_id = suap_id
+
+db.session.commit()
+login_user(user)
+return user</pre>
+<div class="warning"><strong>Não copie a senha do SUAP.</strong> A confiança vem do token e do perfil retornado pelo SUAP.</div>
+</section>
+
+<section class="page">
+<h2>9. Integração da interface de usuário</h2>
+<h3>9.1 Botão na tela de login</h3>
+<p>Em <code>app/templates/login.html</code>, deve ser incluído um link para a rota que inicia o fluxo OAuth:</p>
+<pre>&lt;a href="{{ url_for('login_suap') }}"
+   class="btn btn-secondary btn-user btn-block"&gt;
+    Entrar com SUAP
+&lt;/a&gt;</pre>
+<p>O botão não realiza a troca do token no navegador; sua única finalidade é iniciar a rota Flask.</p>
+<h3>9.2 Página de perfil</h3>
+<p>A rota encaminha o dicionário <code>dados</code> ao template <code>suap_eu.html</code>. O template apresenta nome, tipo de vínculo, matrícula, e-mail, campus, curso ou cargo, situação e fotografia, quando esses atributos estiverem disponíveis.</p>
+<pre>{% set vinculo = dados.get('vinculo') %}
+&lt;h2&gt;{{ dados.get('nome_usual') or dados.get('nome') or 'Usuário SUAP' }}&lt;/h2&gt;
+&lt;p&gt;{{ dados.get('email') or 'Não informado' }}&lt;/p&gt;</pre>
+<p>Recomenda-se utilizar <code>get()</code> e valores alternativos, uma vez que os atributos retornados pela API podem variar conforme o tipo de vínculo.</p>
+<div class="figure"><img class="smallimg" src="file:///Users/leosilva/development/ifrn/20261/3ano/prog_int/app_flask/materiais/suap-aluno-login.png" alt="Tela de login do SUAP"><div class="caption">Figura 2 — A autenticação acontece na tela do SUAP.</div></div>
+</section>
+
+<section class="page">
+<h2>10. Execução e validação do fluxo</h2>
+<h3>10.1 Inicialização da aplicação</h3>
+<pre>flask db upgrade
+flask run --debug</pre>
+<p>Acesse <code>http://127.0.0.1:5000/login</code> e execute o seguinte procedimento:</p>
+<ol><li>Verifique a presença do botão.</li><li>Selecione <strong>Entrar com SUAP</strong>.</li><li>Autentique-se no SUAP.</li><li>Autorize a aplicação.</li><li>Observe o retorno para <code>/suap/callback</code>.</li><li>Confirme a apresentação dos dados do perfil.</li><li>Verifique no banco de dados o preenchimento de <code>suap_id</code>.</li></ol>
+<h3>10.2 Comportamento esperado</h3>
+<table><tr><th>Etapa</th><th>Resultado</th></tr><tr><td>Login</td><td>Redirecionamento para o domínio do SUAP.</td></tr><tr><td>Autorização</td><td>A senha aparece somente no SUAP.</td></tr><tr><td>Callback</td><td>A URL recebe <code>code</code> e <code>state</code> temporários.</td></tr><tr><td>Perfil</td><td>A aplicação exibe os dados da API.</td></tr><tr><td>Segundo login</td><td>O mesmo usuário é encontrado pelo <code>suap_id</code>.</td></tr></table>
+<div class="figure"><img class="smallimg" src="file:///Users/leosilva/development/ifrn/20261/3ano/prog_int/app_flask/materiais/suap-code-token.png" alt="Código e token OAuth"><div class="caption">Figura 3 — O código é trocado por token no servidor.</div></div>
+</section>
+
+<section class="page">
+<h2>11. Diagnóstico e resolução de problemas</h2>
+<h3>“redirect_uri mismatch”</h3><p>Compare o registro no SUAP com <code>request.host_url.rstrip('/') + url_for('suap_callback')</code>. Devem coincidir o protocolo, o host, a porta e o caminho.</p>
+<h3>“state” inválido</h3><p>A sessão pode não estar sendo preservada ou o callback pode ter sido acessado diretamente. O fluxo deve ser iniciado pelo botão e a <code>SECRET_KEY</code> deve permanecer estável.</p>
+<h3>Token não obtido</h3><p>Verifique o Client ID, o Client Secret, o grant, a URI de callback e a eventual reutilização do código. O código possui validade temporária e uso único.</p>
+<h3>Perfil não retornado</h3><p>Verifique o cabeçalho Bearer e a URL da API. Tokens não devem ser registrados em logs.</p>
+<h3>A autenticação ocorre, mas a sessão não permanece</h3><p>Verifique <code>login_user(user)</code>, o <code>user_loader</code> em <code>app/__init__.py</code>, os cookies e a <code>SECRET_KEY</code>. As rotas protegidas devem utilizar <code>@login_required</code>.</p>
+<h3>Erro de migration</h3><p>Execute <code>flask db history</code> e <code>flask db heads</code>. Se o banco referenciar uma revisão ausente localmente, recupere o arquivo correspondente antes de alterar versões.</p>
+<div class="success"><strong>Checklist de conformidade:</strong> credenciais fora do Git; URI de callback exata; <code>state</code> validado; segredo restrito ao servidor; token não persistido sem necessidade; <code>suap_id</code> único; tratamento explícito de erros.</div>
+</section>
+
+<section class="page">
+<h2>12. Funções completas usadas no login SUAP</h2>
+<p>Esta seção reúne as funções de autenticação implementadas no projeto. Os exemplos mantêm a lógica e a ordem de operações da implementação analisada.</p>
+<h3>12.1 Serviço de autenticação SUAP</h3>
+<pre>class SuapAuthenticationService:
+    @staticmethod
+    def authorization_url(state, redirect_uri):
+        params = urlencode({
+            'response_type': 'code',
+            'client_id': app.config['SUAP_CLIENT_ID'],
+            'redirect_uri': redirect_uri,
+            'state': state,
+        })
+        return f"{app.config['SUAP_URL']}/o/authorize/?{params}"
+
+    @staticmethod
+    def exchange_code(code, redirect_uri):
+        data = urlencode({
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': redirect_uri,
+            'client_id': app.config['SUAP_CLIENT_ID'],
+            'client_secret': app.config['SUAP_CLIENT_SECRET'],
+        }).encode()
+        try:
+            with urlopen(Request(
+                f"{app.config['SUAP_URL']}/o/token/",
+                data=data,
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            )) as response:
+                return json.load(response)
+        except URLError:
+            return None
+
+    @staticmethod
+    def meus_dados(access_token):
+        request = Request(
+            f"{app.config['SUAP_URL']}/api/rh/meus-dados/",
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Accept': 'application/json',
+            },
+        )
+        try:
+            with urlopen(request) as response:
+                return json.load(response)
+        except URLError:
+            return None</pre>
+<h3>12.2 Rotas que iniciam e concluem o OAuth</h3>
+<pre>@app.route('/login-suap')
+def login_suap():
+    state = token_urlsafe(32)
+    redirect_uri = request.host_url.rstrip('/') + url_for('suap_callback')
+    session['suap_oauth_state'] = state
+    return redirect(SuapAuthenticationService.authorization_url(state, redirect_uri))
+
+@app.route('/suap/callback')
+def suap_callback():
+    state = session.pop('suap_oauth_state', None)
+    if request.args.get('error') or not state or state != request.args.get('state', ''):
+        flash('Falha na autenticação do SUAP.', 'error')
+        return redirect(url_for('login'))
+
+    code = request.args.get('code')
+    if not code:
+        flash('Código de autorização do SUAP não recebido.', 'error')
+        return redirect(url_for('login'))
+
+    redirect_uri = request.host_url.rstrip('/') + url_for('suap_callback')
+    tokens = SuapAuthenticationService.exchange_code(code, redirect_uri)
+    if not tokens or not tokens.get('access_token'):
+        flash('Não foi possível obter o token do SUAP.', 'error')
+        return redirect(url_for('login'))
+
+    dados = SuapAuthenticationService.meus_dados(tokens['access_token'])
+    if dados is None:
+        flash('Não foi possível consultar os dados do SUAP.', 'error')
+        return redirect(url_for('login'))
+
+    usuario = AuthenticationService.login_suap(dados)
+    if usuario is None:
+        flash('Não foi possível vincular esta conta SUAP a um usuário local.', 'error')
+        return redirect(url_for('login'))
+
+    foto = dados.get('url_foto_75x100') or dados.get('url_foto') or dados.get('foto')
+    foto_url = urljoin(app.config['SUAP_URL'] + '/', foto) if foto else None
+    return render_template('suap_eu.html', title='Perfil SUAP', dados=dados, foto_url=foto_url)</pre>
+<h3>12.3 Vínculo com o usuário local</h3>
+<pre>def login_suap(dados):
+    suap_id = str(dados.get('matricula') or dados.get('username') or dados.get('email') or '').strip()
+    if not suap_id:
+        return None
+
+    username = suap_id
+    email = dados.get('email') or f'{username}@suap.local'
+    user = Usuario.query.filter_by(suap_id=suap_id).first()
+
+    if not user:
+        user = Usuario.query.filter((Usuario.username == username) | (Usuario.email == email)).first()
+
+    if user and user.suap_id and user.suap_id != suap_id:
+        return None
+
+    if not user:
+        user = Usuario(username=username, email=email, suap_id=suap_id)
+        db.session.add(user)
+    else:
+        user.suap_id = suap_id
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None
+
+    login_user(user)
+    return user</pre>
+</section>
+
+<section class="page">
+<h2>13. Síntese da implementação</h2>
+<p>A integração do login com o SUAP articula cinco componentes principais:</p>
+<ol><li><strong>Configuração:</strong> URL, Client ID, Client Secret e SECRET_KEY.</li><li><strong>Banco:</strong> coluna opcional e única <code>suap_id</code>.</li><li><strong>Serviço:</strong> autorização, troca do código e consulta da API.</li><li><strong>Rotas:</strong> início, callback, validações e erros.</li><li><strong>Sessão:</strong> localizar/criar usuário e chamar Flask-Login.</li></ol>
+<div class="lead"><strong>Síntese do fluxo:</strong> botão Flask → autorização no SUAP → callback com code/state → obtenção do token no servidor → consulta ao perfil → vínculo local → sessão Flask-Login.</div>
+<h3>Recomendações de segurança e manutenção</h3>
+<ul><li>Utilizar HTTPS em qualquer ambiente acessível pela rede pública.</li><li>Armazenar segredos em variáveis de ambiente ou em um gerenciador de segredos.</li><li>Evitar o registro de senhas, client secrets, access tokens e dados pessoais desnecessários nos logs.</li><li>Implementar testes para state inválido, callback sem code, falha na obtenção do token e usuário previamente vinculado.</li><li>Priorizar um identificador permanente do SUAP, caso a API o disponibilize.</li></ul>
+<p class="footer-note">Tutorial genérico baseado na estrutura atual de uma aplicação Flask com Flask-Login, SQLAlchemy, Flask-Migrate e integração OAuth 2.0 com o SUAP. Adapte endpoints, campos e URLs conforme a documentação e o ambiente do seu SUAP.</p>
+</section>
+</body>
+</html>
+
